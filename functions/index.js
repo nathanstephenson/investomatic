@@ -36,11 +36,11 @@ exports.helloWorld = functions.https.onRequest(async (request, response) => {
 
 	const order = await alpaca.createOrder({
 		symbol: stocksToBuy[Math.floor(Math.random() * stocksToBuy.length)],
-		notional: account.buying_power * 0.9,
+		notional: account.buying_power * 0.1,
 		side: 'buy',
 		type: 'market',
 		time_in_force: 'day',
-	})
+	});
 
 	response.send(order);
 });
