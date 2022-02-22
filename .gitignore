@@ -87,4 +87,4 @@ typings/
 # DynamoDB Local files
 .dynamodb/
 
-functions/secrets.js
+functions/src/secrets.ts
