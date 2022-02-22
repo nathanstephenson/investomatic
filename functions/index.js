@@ -2,7 +2,6 @@
 const functions = require('firebase-functions');
 const { openAiAPIKey, alpacaKeyID, alpacaAPIKey } = require('./secrets');
 const { Configuration, OpenAIApi } = require('openai');
-const puppeteer = require('puppeteer');
 const Alpaca = require('@alpacahq/alpaca-trade-api');
 
 
@@ -18,8 +17,6 @@ const alpaca = new Alpaca({
 });
 
 exports.helloWorld = functions.https.onRequest(async (request, response) => {
-
-	const tweets = await scrape();
 
 	const gptCompletion = await openAI.createCompletion('text-ada-001', {
 		prompt: `${tweets} Jim Cramer recommends buying the folling stock tickers: `,
@@ -44,23 +41,3 @@ exports.helloWorld = functions.https.onRequest(async (request, response) => {
 
 	response.send(order);
 });
-
-async function scrape() {
-	const browser = await puppeteer.launch();
-	const page = await browser.newPage();
-
-	await page.goto('https://twitter.com/jimcramer', {
-		waitUntil: 'networkidle2',
-	});
-
-	await page.waitForTimeout(3000);
-
-	// await page.screenshot({path: 'example.png'});
-
-	const tweets = await page.evaluate(async () => {
-		return document.body.innerText;
-	});//not just tweets, but any object on the page (including suggested stocks to track)
-
-	browser.close();
-	return tweets;
-}
