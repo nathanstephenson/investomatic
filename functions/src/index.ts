@@ -20,10 +20,12 @@ const alpaca = new Alpaca({
 
 export const helloWorld = functions.https.onRequest(async (request, response) => {
 
-	const tweets = twitterScrape()
+	const tweets = await twitterScrape()
+
+	console.log("got tweets")
 
 	const gptCompletion = await openAI.createCompletion('text-ada-001', {
-		prompt: `${tweets} Jim Cramer recommends buying the following stock tickers: `,
+		prompt: `${tweets} I'm thinking of buying the following stock tickers: `,
 		temperature: 0.7,
 		max_tokens: 32,
 		top_p: 1,
@@ -31,12 +33,18 @@ export const helloWorld = functions.https.onRequest(async (request, response) =>
 		presence_penalty: 0
 	})
 
+	console.log("got response from openai")
+
 	const choices = gptCompletion.data.choices
 	
 	if (choices != undefined && choices != null && choices[0] != undefined && choices[0] != null) {
 		const stocksToBuy = choices[0].text?.match(/\b[A-Z]+\b/g)
 
-		const account = await alpaca.getAccount()
+		console.log("got stocks to buy: " + stocksToBuy)
+
+		const account = await alpaca.getAccount().catch((error: unknown) => response.send(error))
+
+		console.log("got alpaca account")
 	
 		if (stocksToBuy != undefined && stocksToBuy != null) {
 			const order = await alpaca.createOrder({
@@ -46,8 +54,14 @@ export const helloWorld = functions.https.onRequest(async (request, response) =>
 				type: 'market',
 				time_in_force: 'day'
 			})
+
+			console.log("created order")
 		
 			response.send(order);
+		} else {
+			response.send("no stocks to buy")
 		}
+	} else {
+		response.send("choices empty")
 	}
 });
