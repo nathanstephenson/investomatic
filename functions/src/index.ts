@@ -20,12 +20,28 @@ const alpaca = new Alpaca({
 
 export const helloWorld = functions.https.onRequest(async (request, response) => {
 
-	const tweets = await twitterScrape()
+	const tickers:{ [ticker: string]:number } = {}
 
-	console.log("got tweets")
+	// GATHER DATA
+	const twitter = await twitterScrape()
+	Object.keys(twitter).forEach((stock) => {
+		tickers[stock] = tickers[stock] == undefined ? twitter[stock] : tickers[stock] += twitter[stock]
+	})
+	console.log("added tweets to map")
+
+	// POST PROCESSING
+	let averageScore = 0
+	Object.values(tickers).forEach((n) => averageScore += n)
+	averageScore = averageScore/Object.values(tickers).length
+
+	const filteredTickers = Object.keys(tickers).filter((ticker) => tickers[ticker]>averageScore)
+	console.log("filtered below average tickers out of map")
+
+	const tickersList = filteredTickers.toString().replace(",", "\n")
+	console.log("tickers selected: " + tickersList)
 
 	const gptCompletion = await openAI.createCompletion('text-ada-001', {
-		prompt: `${tweets} I'm thinking of buying the following stock tickers: `,
+		prompt: `${tickersList} I'm thinking of buying the following stock tickers: `,
 		temperature: 0.7,
 		max_tokens: 32,
 		top_p: 1,
