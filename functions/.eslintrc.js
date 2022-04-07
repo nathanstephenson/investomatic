@@ -37,5 +37,6 @@ module.exports = {
 	"comma-dangle": "off",
     "import/no-unresolved": 0,
 	"noImplicitAny": "off",
+	"no-multiple-empty-lines": "off",
   },
 };
