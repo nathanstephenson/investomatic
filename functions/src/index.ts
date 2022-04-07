@@ -5,6 +5,7 @@ import Alpaca from "@alpacahq/alpaca-trade-api"
 import { openAiAPIKey, alpacaAPIKey, alpacaKeyID } from "./secrets"
 
 import { scrape as twitterScrape } from "./sources/twitter"
+import { Ticker } from "./classes"
 
 const configuration = new Configuration({
 	apiKey: openAiAPIKey
@@ -18,23 +19,38 @@ const alpaca = new Alpaca({
 	paper: true
 })
 
-export const helloWorld = functions.https.onRequest(async (request, response) => {
+export const investomatic = functions.https.onRequest(async (request, response) => {
 
-	const tickers:{ [ticker: string]:number } = {}
+	
+
+
+	response.send("You probably shouldn't see this")
+})
+
+export const helloWorld = functions.https.onRequest(async (request, response) => {
+	const sourceMultipliers = {
+		"twitter": 1,
+	}
+
+	const tickers: Map<string, Ticker> = new Map<string, Ticker>()
 
 	// GATHER DATA
 	const twitter = await twitterScrape()
-	Object.keys(twitter).forEach((stock) => {
-		tickers[stock] = tickers[stock] == undefined ? twitter[stock] : tickers[stock] += twitter[stock]
+	twitter.forEach((ticker) => {
+		const name = ticker.getName()
+		tickers.set(name, tickers.get(name) ?
+			tickers.get(name)!.multiplyRating(sourceMultipliers["twitter"] * ticker.getRating()) 
+			: new Ticker(name).multiplyRating(sourceMultipliers["twitter"] * ticker.getRating())
+		)
 	})
 	console.log("added tweets to map")
 
 	// POST PROCESSING
 	let averageScore = 0
-	Object.values(tickers).forEach((n) => averageScore += n)
+	Object.values(tickers).forEach((ticker) => averageScore += ticker.getRating())
 	averageScore = averageScore/Object.values(tickers).length
 
-	const filteredTickers = Object.keys(tickers).filter((ticker) => tickers[ticker]>averageScore)
+	const filteredTickers = Object.keys(tickers).filter((ticker) => tickers.get(ticker)!.getRating()>averageScore)
 	console.log("filtered below average tickers out of map")
 
 	const tickersList = filteredTickers.toString().replace(",", "\n")

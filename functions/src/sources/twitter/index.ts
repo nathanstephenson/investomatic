@@ -1,5 +1,6 @@
 import puppeteer from 'puppeteer'
-import { users } from './users'
+import { Ticker, TwitterUser } from '../../classes'
+import { users as userMap } from './users'
 
 const baseURL = "https://twitter.com/"
 
@@ -7,16 +8,18 @@ export const calculateUserScores = async () => {
 	console.log("not implemented")
 }
 
-export const scrape = async (): Promise<{ [ticker: string]:number }> => {
+export const scrape = async (): Promise<Ticker[]> => {
 
-	const stockWeighting: { [ticker: string] : number } = {}
+	const stockWeighting: Map<string, Ticker> = new Map<string, Ticker>()
 
 	const browser = await puppeteer.launch()
 	const page = await browser.newPage()
 	
 	console.log("initialised browser")
 
-	for (const user of Array.from(users().values())) {
+	const users: Iterable<TwitterUser> = userMap().values()
+
+	for (const user of users) {
 		await page.goto(baseURL + user.username, {
 			waitUntil: 'networkidle0'
 		})
@@ -32,12 +35,16 @@ export const scrape = async (): Promise<{ [ticker: string]:number }> => {
 		const stocks: string[] = tweetArray.filter((text) => regex.test(text))
 		
 		stocks.forEach((stock) => {
-			stockWeighting[stock] = stockWeighting[stock] == undefined ? user.modifier : stockWeighting[stock] += user.modifier
+			if (!stockWeighting.has(stock)) {
+				stockWeighting.set(stock, new Ticker(stock))
+			}
+			const currentStock = stockWeighting.get(stock)!
+			stockWeighting.set(stock, currentStock.multiplyRating(Number.parseFloat("1."+user.getRating().toString())))
 		})
 	
 		console.log("added tweets to list")
 	}
 
 	browser.close()
-	return stockWeighting
+	return Object.values(stockWeighting)
 }
