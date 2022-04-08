@@ -20,27 +20,11 @@ export const scrape = async (): Promise<Ticker[]> => {
 	const users: Iterable<TwitterUser> = userMap().values()
 
 	for (const user of users) {
-		await page.goto(baseURL + user.username, {
-			waitUntil: 'networkidle0'
-		})
-	
-		console.log("went to page for user: " + (baseURL + user.name))
-	
-		const tweets = await page.evaluate(async () => {// need to start looking at what this is actually doing
-			return document.body.innerText
-		})
+		const tweets = await getTweets(page, user)
 
-		const regex = /\b[$][A-Z]+\b/g
-		const tweetArray: string[] = tweets.split("\n")
-		const stocks: string[] = tweetArray.filter((text) => regex.test(text))
+		const stocks: string[] = getStocksFromTweets(tweets)
 		
-		stocks.forEach((stock) => {
-			if (!stockWeighting.has(stock)) {
-				stockWeighting.set(stock, new Ticker(stock))
-			}
-			const currentStock = stockWeighting.get(stock)!
-			stockWeighting.set(stock, currentStock.multiplyRating(Number.parseFloat("1."+user.getRating().toString())))
-		})
+		stocks.forEach((stock) => applyStockWeighting(stockWeighting, stock, user))
 	
 		console.log("added tweets to list")
 	}
@@ -48,3 +32,31 @@ export const scrape = async (): Promise<Ticker[]> => {
 	browser.close()
 	return Object.values(stockWeighting)
 }
+
+function applyStockWeighting(stockWeighting: Map<string, Ticker>, stock: string, twitterUser: TwitterUser) : void {
+	if (!stockWeighting.has(stock)) {
+		stockWeighting.set(stock, new Ticker(stock))
+	}
+	const currentStock = stockWeighting.get(stock)!.multiplyRating(Number.parseFloat("1." + twitterUser.getRating().toString()))
+	console.log("got stock " + currentStock.getName() + " with rating: " + currentStock.getRating())
+	stockWeighting.set(stock, currentStock)
+}
+
+function getStocksFromTweets(tweets: string[]) : string[] {
+	const regex = /\b[$][A-Z]+\b/g
+	const stocks: string[] = tweets.filter((text) => regex.test(text))
+	return stocks
+}
+
+async function getTweets(page: puppeteer.Page, user: TwitterUser) : Promise<string[]> {
+	await page.goto(baseURL + user.username, { waitUntil: 'networkidle0' })
+
+	console.log("went to page for user: " + (baseURL + user.name))
+
+	const tweets = await page.evaluate(async () => {
+		return document.body.innerText
+	})
+	const tweetArray: string[] = tweets.split("\n")
+	return tweetArray
+}
+
