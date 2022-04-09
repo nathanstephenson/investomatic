@@ -1,6 +1,6 @@
 export class Ticker {
-	name: string
-	rating: number
+	private name: string
+	private rating: number
 
 	constructor(name: string) {
 		this.name = name
@@ -27,8 +27,8 @@ export class Ticker {
 }
 
 export class User {
-	name: string
-	rating: number
+	private name: string
+	private rating: number
 
 	constructor(name: string, rating: number = 0) {
 		this.name = name
@@ -50,10 +50,14 @@ export class User {
 }
 
 export class TwitterUser extends User {
-	username: string
+	private username: string
 
 	constructor(name: string, username: string, rating: number) {
 		super(name, rating)
 		this.username = username
+	}
+
+	getUsername() : string {
+		return this.username
 	}
 }
