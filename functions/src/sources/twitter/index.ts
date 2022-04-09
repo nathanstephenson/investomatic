@@ -1,8 +1,7 @@
-import puppeteer from 'puppeteer'
+import { TwitterApi } from 'twitter-api-v2';
 import { Ticker, TwitterUser } from '../../classes'
+import { twitterAPIKey, twitterAPIKeySecret } from '../../secrets';
 import { users as userMap } from './users'
-
-const baseURL = "https://twitter.com/"
 
 export const calculateUserScores = async () => {
 	console.log("not implemented")
@@ -12,15 +11,10 @@ export const scrape = async (): Promise<Ticker[]> => {
 
 	const stockWeighting: Map<string, Ticker> = new Map<string, Ticker>()
 
-	const browser = await puppeteer.launch()
-	const page = await browser.newPage()
-	
-	console.log("initialised browser")
-
 	const users: Iterable<TwitterUser> = userMap().values()
 
 	for (const user of users) {
-		const tweets = await getTweets(page, user)
+		const tweets = await getTweets(user)
 
 		const stocks: string[] = getStocksFromTweets(tweets)
 		
@@ -29,7 +23,6 @@ export const scrape = async (): Promise<Ticker[]> => {
 		console.log("added tweets to list")
 	}
 
-	browser.close()
 	return Object.values(stockWeighting)
 }
 
@@ -48,15 +41,28 @@ function getStocksFromTweets(tweets: string[]) : string[] {
 	return stocks
 }
 
-async function getTweets(page: puppeteer.Page, user: TwitterUser) : Promise<string[]> {
-	await page.goto(baseURL + user.username, { waitUntil: 'networkidle0' })
-
-	console.log("went to page for user: " + (baseURL + user.name))
-
-	const tweets = await page.evaluate(async () => {
-		return document.body.innerText
+async function getTweets(user: TwitterUser) : Promise<string[]> {
+	const twitterReqClient = new TwitterApi({
+		appKey: twitterAPIKey,
+		appSecret: twitterAPIKeySecret,
 	})
-	const tweetArray: string[] = tweets.split("\n")
+
+	const auth = await twitterReqClient.generateAuthLink()
+
+	const twitterClient = new TwitterApi({
+		appKey: twitterAPIKey,
+		appSecret: twitterAPIKeySecret,
+		accessToken: auth.oauth_token, // oauth token from previous step (link generation)
+		accessSecret: auth.oauth_token_secret, // oauth token secret from previous step (link generation)
+	})
+
+	console.log("Connected to Twitter API " + await twitterClient.currentUser())
+
+	const timeline = await twitterClient.v2.userTimeline(user.getUsername()).catch((e) => console.log(e))
+	console.log("Got timeline for " + user.getName() + " " + timeline)
+	const tweetArray: string[] = []
+	// const tweetArray: string[] = timeline.tweets.filter((tweet) => { console.log(tweet.created_at); return tweet.created_at; }).map((tweet) => { return tweet.text })
+
 	return tweetArray
 }
 
