@@ -1,13 +1,13 @@
 import { TwitterApi } from 'twitter-api-v2';
 import { Ticker, TwitterUser } from '../../classes'
-import { twitterAPIKey, twitterAPIKeySecret } from '../../secrets';
+import { twitterAPIBearerToken } from '../../secrets';
 import { users as userMap } from './users'
 
-export const calculateUserScores = async () => {
+export const calculateUserScores = () : void => {
 	console.log("not implemented")
 }
 
-export const scrape = async (): Promise<Ticker[]> => {
+export const scrape = async () : Promise<Ticker[]> => {
 
 	const stockWeighting: Map<string, Ticker> = new Map<string, Ticker>()
 
@@ -42,24 +42,15 @@ function getStocksFromTweets(tweets: string[]) : string[] {
 }
 
 async function getTweets(user: TwitterUser) : Promise<string[]> {
-	const twitterReqClient = new TwitterApi({
-		appKey: twitterAPIKey,
-		appSecret: twitterAPIKeySecret,
-	})
 
-	const auth = await twitterReqClient.generateAuthLink()
+	const client = new TwitterApi(twitterAPIBearerToken).readOnly.v2
+	console.log("Connected to Twitter API " + client.getActiveTokens())
 
-	const twitterClient = new TwitterApi({
-		appKey: twitterAPIKey,
-		appSecret: twitterAPIKeySecret,
-		accessToken: auth.oauth_token, // oauth token from previous step (link generation)
-		accessSecret: auth.oauth_token_secret, // oauth token secret from previous step (link generation)
-	})
-
-	console.log("Connected to Twitter API " + await twitterClient.currentUser())
-
-	const timeline = await twitterClient.v2.userTimeline(user.getUsername()).catch((e) => console.log(e))
-	console.log("Got timeline for " + user.getName() + " " + timeline)
+	const twitterUser = await client.userByUsername(user.getUsername())
+	console.log(twitterUser.data)
+	const userTweets = await client.userTimeline(twitterUser.data.id)
+	console.log("tweets: " + userTweets)
+	
 	const tweetArray: string[] = []
 	// const tweetArray: string[] = timeline.tweets.filter((tweet) => { console.log(tweet.created_at); return tweet.created_at; }).map((tweet) => { return tweet.text })
 
