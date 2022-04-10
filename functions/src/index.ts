@@ -52,7 +52,7 @@ export const scraping = functions.https.onRequest(async (request, response) => {
 });
 
 
-async function getChoicesFromGPT(tickersList: string[]) {
+async function getChoicesFromGPT(tickersList: string[]) : Promise<string[] | undefined> {
 	const filteredTickers = tickersList.toString().replace(",", "\n")
 	console.log("tickers selected: " + tickersList)
 
@@ -83,7 +83,7 @@ async function getChoicesFromGPT(tickersList: string[]) {
 /**
  * Makes a single order using a random ticker in the stocksToBuy list (also sends response)
  */
-async function makeOrder(stocksToBuy: string[] | undefined, tickers: Map<string, Ticker>, response: functions.Response<any>) {
+async function makeOrder(stocksToBuy: string[] | undefined, tickers: Map<string, Ticker>, response: functions.Response<any>) : Promise<void> {
 	
 	const account = await alpaca.getAccount().catch((error: unknown) => response.send(error))
 
