@@ -28,3 +28,11 @@ export function filterToAboveAverage(tickers: Map<string, Ticker>) : string[] {
 	console.log("filtered below average tickers out of map")
 	return filteredTickers
 }
+
+/**
+ * Asynchronous forEach method which runs in parallel. Can return an array of results (similar to map)
+ */
+export async function asyncForEach(params: unknown[], callbackFn: {(param: any):Promise<unknown>}) : Promise<any[]> {
+	const results = await Promise.all(params.map(async param => await callbackFn(param)))
+	return results
+}
