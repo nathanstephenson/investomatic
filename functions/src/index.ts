@@ -7,6 +7,7 @@ import { openAiAPIKey, alpacaAPIKey, alpacaKeyID } from "./secrets"
 import { scrape as twitterScrape } from "./sources/twitter"
 import { Ticker } from "./classes"
 import { addTickersToMap, filterToAboveAverage } from "./utils"
+import { getHistoricScores } from "./sources/market"
 
 const configuration = new Configuration({
 	apiKey: openAiAPIKey
@@ -26,14 +27,6 @@ const sourceMultipliers = {
 
 export const investomatic = functions.https.onRequest(async (request, response) => {
 
-	
-
-
-	response.send("You probably shouldn't see this")
-})
-
-export const scraping = functions.https.onRequest(async (request, response) => {
-
 	const tickers: Map<string, Ticker> = new Map<string, Ticker>()
 
 	// GATHER DATA
@@ -44,12 +37,23 @@ export const scraping = functions.https.onRequest(async (request, response) => {
 	// POST PROCESSING
 	const tickersList = filterToAboveAverage(tickers)
 
-	console.log("Out of the tickers " + tickers.values() + " these ones are above average in rating: " + tickersList)
+	console.log("Out of the tickers " + Array.from(tickers.values()).map(t => t?.getName()) + " these ones are above average in rating: " + tickersList)
 
-	const stocksToBuy = await getChoicesFromGPT(tickersList)
+	// GET AN AI TO TELL ME WHAT TO DO WITH MY MONEY
+	const gptChoices = await getChoicesFromGPT(tickersList)
 
+	// REDUCE ARRAY TO ONLY ONE OF EACH VALUE
+	const stocksToBuy = Array.from(new Set(gptChoices)) 
+
+	// USE HISTORICAL DATA TO ADD WEIGHTING TO SCORES
+	await getHistoricScores(stocksToBuy)
+
+	// MAKE ORDER
 	await makeOrder(stocksToBuy, tickers, response)
-});
+
+
+	response.send("You probably shouldn't see this")
+})
 
 
 async function getChoicesFromGPT(tickersList: string[]) : Promise<string[] | undefined> {
