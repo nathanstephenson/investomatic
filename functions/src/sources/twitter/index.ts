@@ -36,8 +36,15 @@ function applyStockWeighting(stockWeighting: Map<string, Ticker>, stock: string,
 }
 
 function getStocksFromTweets(tweets: string[]) : string[] {
-	const regex = /\b[$][A-Z]+\b/g
-	const stocks: string[] = tweets.filter((text) => regex.test(text))
+	const regex = /\b[$[A-Z]+\b/g
+	const tweetsWithStocks: string[] = tweets.filter((text) => regex.test(text))
+	let stocks: string[] = []
+	tweetsWithStocks.forEach(tweet => {
+		const regexResult = regex.exec(tweet)
+		if (regexResult) {
+			stocks = stocks.concat(Array.from(regexResult.values()))
+		}
+	})
 	return stocks
 }
 
@@ -48,10 +55,10 @@ async function getTweets(user: TwitterUser) : Promise<string[]> {
 
 	const twitterUser = await client.userByUsername(user.getUsername())
 	console.log(twitterUser.data)
-	const userTweets = await client.userTimeline(twitterUser.data.id)
+	const userTweets = (await client.userTimeline(twitterUser.data.id)).data.data.map((t) => { return t.text })
 	console.log("tweets: " + userTweets)
 	
-	const tweetArray: string[] = []
+	const tweetArray: string[] = getStocksFromTweets(userTweets)
 	// const tweetArray: string[] = timeline.tweets.filter((tweet) => { console.log(tweet.created_at); return tweet.created_at; }).map((tweet) => { return tweet.text })
 
 	return tweetArray
