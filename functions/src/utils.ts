@@ -25,7 +25,7 @@ export function filterToAboveAverage(tickers: Map<string, Ticker>) : string[] {
 	averageScore = averageScore / Object.values(tickers).length
 
 	const filteredTickers = Object.keys(tickers).filter((ticker) => tickers.get(ticker)!.getRating() > averageScore)
-	console.log("filtered below average tickers out of map")
+	console.log("utils | filtered below average tickers out of map")
 	return filteredTickers
 }
 

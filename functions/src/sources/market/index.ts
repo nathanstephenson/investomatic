@@ -5,6 +5,15 @@ import { asyncForEach } from "../../utils"
 const market = new AlphaVantageAPI(alphaVantageAPIKey, "compact", false)
 const sensitivity = 5 // PERCENTAGE DIFFERENCE BETWEEN OPEN/CLOSE FOR A DAY'S DATA TO IMPACT THE SCORE OF A STOCK
 
+// TODO: 
+// - STORE HISTORY SO FEWER LOOKUPS CAN BE MADE AND SO DATA CAN BE PRELOADED
+//   - STORE LAST DATE CHECKED IN HISTORY
+//   - KEEP TRACK OF AVERAGE NUMBER OF DAYS BEING USED FOR DATA EACH TIME HISTORY IS COLLECTED
+// - FIND THE BEST WAY TO STORE HISTORY (TEXT FILE, OR LIGHTWEIGHT LOCAL DB?)
+// - FIGURE OUT HOW TO USE TRENDS TO MAKE PREDICTIONS
+// - USE HIGH-PERFORMING TICKERS TO LOOK FOR MORE THAT MIGHT ALSO DO WELL (E.G. SAME INDUSTRY)
+
+
 export async function getHistoricScores(stocks: string[] | undefined) : Promise<Map<string, number>>{
 	const scores = new Map<string, number>()
 
@@ -19,7 +28,7 @@ export async function getHistoricScores(stocks: string[] | undefined) : Promise<
 
 		if(data){
 			tickerRating = getAverageDailyRatio(data)
-			console.log(stock, tickerRating)
+			console.log("market/index.ts | " + stock, tickerRating)
 		}
 
 		scores.set(stock, tickerRating)

@@ -32,12 +32,12 @@ export const investomatic = functions.https.onRequest(async (request, response) 
 	// GATHER DATA
 	const twitterTickers = await twitterScrape()
 	addTickersToMap(twitterTickers, tickers, sourceMultipliers["twitter"])
-	console.log("added tweets to map")
+	console.log("main | added tweets to map")
 
 	// POST PROCESSING
 	const tickersList = filterToAboveAverage(tickers)
 
-	console.log("Out of the tickers " + Array.from(tickers.values()).map(t => t?.getName()) + " these ones are above average in rating: " + tickersList)
+	console.log("main | Out of the tickers " + Array.from(tickers.values()).map(t => t?.getName()) + " these ones are above average in rating: " + tickersList)
 
 	// GET AN AI TO TELL ME WHAT TO DO WITH MY MONEY
 	const gptChoices = await getChoicesFromGPT(tickersList)
@@ -45,20 +45,17 @@ export const investomatic = functions.https.onRequest(async (request, response) 
 	// REDUCE ARRAY TO ONLY ONE OF EACH VALUE
 	const stocksToBuy = Array.from(new Set(gptChoices)) 
 
-	// USE HISTORICAL DATA TO ADD WEIGHTING TO SCORES
-	await getHistoricScores(stocksToBuy)
+	// USE HISTORICAL DATA TO ADD WEIGHTING TO SCORES AND VALIDATE TICKERS
+	const validTickers = await getHistoricScores(stocksToBuy)
 
 	// MAKE ORDER
-	await makeOrder(stocksToBuy, tickers, response)
-
-
-	response.send("You probably shouldn't see this")
+	await makeOrder(Array.from(validTickers.keys()), tickers, response)
 })
 
 
 async function getChoicesFromGPT(tickersList: string[]) : Promise<string[] | undefined> {
 	const filteredTickers = tickersList.toString().replace(",", "\n")
-	console.log("tickers selected: " + tickersList)
+	console.log("src/index.ts | tickers selected: " + tickersList)
 
 	const gptCompletion = await openAI.createCompletion('text-ada-001', {
 		prompt: `${filteredTickers} I'm thinking of buying the following stock tickers: `,
@@ -69,14 +66,14 @@ async function getChoicesFromGPT(tickersList: string[]) : Promise<string[] | und
 		presence_penalty: 0
 	})
 
-	console.log("got response from openai")
+	console.log("src/index.ts | got response from openai")
 
 	const choices = gptCompletion.data.choices
 	
 	if (choices != undefined && choices != null && choices[0] != undefined && choices[0] != null) {
 		const stocksToBuy = choices[0].text?.match(/\b[A-Z]+\b/g)?.map((s) => {return s})
 
-		console.log("got stocks to buy: " + stocksToBuy)
+		console.log("src/index.ts | got stocks to buy: " + stocksToBuy)
 
 		return stocksToBuy
 	}
@@ -91,21 +88,31 @@ async function makeOrder(stocksToBuy: string[] | undefined, tickers: Map<string,
 	
 	const account = await alpaca.getAccount().catch((error: unknown) => response.send(error))
 
-	console.log("got alpaca account")
+	console.log("src/index.ts | got alpaca account")
 
 	if (stocksToBuy != undefined && stocksToBuy != null) {
 		const stockToBuy = stocksToBuy[Math.floor(Math.random() * stocksToBuy?.length)]
-		const order = await alpaca.createOrder({
-			symbol: stockToBuy,
-			notional: 0.1 * account.buying_power * tickers.size > 0 ? tickers.get(stockToBuy)!.getRating() : 1,
-			side: 'buy',
-			type: 'market',
-			time_in_force: 'day'
-		})
+		let order = ""
+		try{
+			order = await alpaca.createOrder({
+				symbol: stockToBuy,
+				notional: 0.1 * account.buying_power * tickers.size > 0 ? tickers.get(stockToBuy)!.getRating() : 1,
+				side: 'buy',
+				type: 'market',
+				time_in_force: 'day'
+			})
+		} catch (e) {
+			console.log("Couldn't create order... \n" + e)
+			order += e
+			response.send("Couldn't create order... \n" + order)
+		}
 
-		console.log("created order")
-
-		response.send(order)
+		if(!response.headersSent){
+			console.log("src/index.ts | created order")
+			response.send(order)
+		} else {
+			console.log("src/index.ts | process failed :(")
+		}
 	} else {
 		response.send("no stocks to buy")
 	}
