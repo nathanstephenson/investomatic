@@ -1,6 +1,8 @@
 import { AlphaVantageAPI, DailyBar } from "alpha-vantage-cli"
+import { Ticker } from "../../classes"
 import { alphaVantageAPIKey } from "../../secrets"
 import { asyncForEach } from "../../utils"
+import { marshallHistoryFile, unmarshallHistoryFile } from "./history/history"
 
 const market = new AlphaVantageAPI(alphaVantageAPIKey, "compact", false)
 const sensitivity = 5 // PERCENTAGE DIFFERENCE BETWEEN OPEN/CLOSE FOR A DAY'S DATA TO IMPACT THE SCORE OF A STOCK
@@ -9,19 +11,21 @@ const sensitivity = 5 // PERCENTAGE DIFFERENCE BETWEEN OPEN/CLOSE FOR A DAY'S DA
 // - STORE HISTORY SO FEWER LOOKUPS CAN BE MADE AND SO DATA CAN BE PRELOADED
 //   - STORE LAST DATE CHECKED IN HISTORY
 //   - KEEP TRACK OF AVERAGE NUMBER OF DAYS BEING USED FOR DATA EACH TIME HISTORY IS COLLECTED
-// - FIND THE BEST WAY TO STORE HISTORY (TEXT FILE, OR LIGHTWEIGHT LOCAL DB?)
+// - FIND THE BEST WAY TO STORE HISTORY (TEXT FILE, OR LIGHTWEIGHT LOCAL DB?) - currently just using csv
 // - FIGURE OUT HOW TO USE TRENDS TO MAKE PREDICTIONS
 // - USE HIGH-PERFORMING TICKERS TO LOOK FOR MORE THAT MIGHT ALSO DO WELL (E.G. SAME INDUSTRY)
 
 
-export async function getHistoricScores(stocks: string[] | undefined) : Promise<Map<string, number>>{
-	const scores = new Map<string, number>()
+export async function getHistoricScores(stocks: string[] | undefined) : Promise<Ticker[]>{
+	const scores: Ticker[] = unmarshallHistoryFile()
 
 	if (stocks == undefined) {
 		return scores
 	}
 	
 	await asyncForEach(stocks, async (stock: string) => {
+		const ticker = new Ticker(stock)
+
 		const data = await market.getDailyData(stock).catch(e => console.log(e))
 		
 		let tickerRating = 1;
@@ -31,8 +35,11 @@ export async function getHistoricScores(stocks: string[] | undefined) : Promise<
 			console.log("market/index.ts | " + stock, tickerRating)
 		}
 
-		scores.set(stock, tickerRating)
+		ticker.setRating(tickerRating)
+		scores.push(ticker)
 	})
+
+	marshallHistoryFile(scores)
 	
 	return scores
 }
