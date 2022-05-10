@@ -6,7 +6,7 @@ import { openAiAPIKey, alpacaAPIKey, alpacaKeyID } from "./secrets"
 
 import { scrape as twitterScrape } from "./sources/twitter"
 import { Ticker } from "./classes"
-import { addTickersToMap, filterToAboveAverage } from "./utils"
+import { updateTickerScores, filterToAboveAverage, splitToBuyAndSell } from "./utils"
 import { getHistoricScores } from "./sources/market"
 
 const configuration = new Configuration({
@@ -27,20 +27,22 @@ const sourceMultipliers = {
 
 export const investomatic = functions.https.onRequest(async (request, response) => {
 
-	const tickers: Map<string, Ticker> = new Map<string, Ticker>()
+	let tickers: Ticker[] = []
 
 	// GATHER DATA
 	const twitterTickers = await twitterScrape()
-	addTickersToMap(twitterTickers, tickers, sourceMultipliers["twitter"])
+	tickers = updateTickerScores(twitterTickers, tickers, sourceMultipliers["twitter"])
 	console.log("main | added tweets to map")
 
 	// POST PROCESSING
-	const tickersList = filterToAboveAverage(tickers)
+	const tickersList = splitToBuyAndSell(tickers)
+	const buyList = filterToAboveAverage(tickersList.buy)
+	// const sellList = tickersList.sell
 
-	console.log("main | Out of the tickers " + Array.from(tickers.values()).map(t => t?.getName()) + " these ones are above average in rating: " + tickersList)
+	console.log("main | Out of the tickers " + tickers.map(t => t?.getName()) + " these ones are above average in rating: " + buyList)
 
 	// GET AN AI TO TELL ME WHAT TO DO WITH MY MONEY
-	const gptChoices = await getChoicesFromGPT(tickersList)
+	const gptChoices = await getChoicesFromGPT(buyList)
 
 	// REDUCE ARRAY TO ONLY ONE OF EACH VALUE
 	const stocksToBuy = Array.from(new Set(gptChoices)) 
@@ -49,7 +51,7 @@ export const investomatic = functions.https.onRequest(async (request, response) 
 	const validTickers = await getHistoricScores(stocksToBuy)
 
 	// MAKE ORDER
-	await makeOrder(Array.from(validTickers.keys()), tickers, response)
+	await makeOrder(validTickers, response)
 })
 
 
@@ -84,7 +86,7 @@ async function getChoicesFromGPT(tickersList: string[]) : Promise<string[] | und
 /**
  * Makes a single order using a random ticker in the stocksToBuy list (also sends response)
  */
-async function makeOrder(stocksToBuy: string[] | undefined, tickers: Map<string, Ticker>, response: functions.Response<any>) : Promise<void> {
+async function makeOrder(stocksToBuy: Ticker[], response: functions.Response<any>) : Promise<void> {
 	
 	const account = await alpaca.getAccount().catch((error: unknown) => response.send(error))
 
@@ -92,11 +94,14 @@ async function makeOrder(stocksToBuy: string[] | undefined, tickers: Map<string,
 
 	if (stocksToBuy != undefined && stocksToBuy != null) {
 		const stockToBuy = stocksToBuy[Math.floor(Math.random() * stocksToBuy?.length)]
+		const notional = 0.1 * account.buying_power * stocksToBuy.length > 0 ? stockToBuy.getRating() : 1
+		console.log("src/index.ts | attempting to purchase " + stockToBuy + " with a notional of £" + notional)
+
 		let order = ""
 		try{
 			order = await alpaca.createOrder({
 				symbol: stockToBuy,
-				notional: 0.1 * account.buying_power * tickers.size > 0 ? tickers.get(stockToBuy)!.getRating() : 1,
+				notional: notional,
 				side: 'buy',
 				type: 'market',
 				time_in_force: 'day'

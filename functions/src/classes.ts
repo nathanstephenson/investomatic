@@ -2,9 +2,9 @@ export class Ticker {
 	private name: string
 	private rating: number
 
-	constructor(name: string) {
+	constructor(name: string, rating: number = 1) {
 		this.name = name
-		this.rating = 1
+		this.rating = rating
 	}
 
 	getName() : string {

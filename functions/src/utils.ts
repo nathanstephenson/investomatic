@@ -9,24 +9,45 @@ export function unmarshallHistoryFile() : void {// output users scores to a map/
 	console.log("not implemented")
 }
 
-export function addTickersToMap(retreivedTickers: Ticker[], tickers: Map<string, Ticker>, sourceMultiplier: number) : void {
+export function updateTickerScores(retreivedTickers: Ticker[], existingTickers: Ticker[], sourceMultiplier: number) : Ticker[] {
+	const tickerMap = new Map<string, Ticker>()
+	existingTickers.forEach(t => {
+		tickerMap.set(t.getName(), t)
+	})
+
 	retreivedTickers.forEach((ticker) => {
 		const name = ticker.getName()
-		tickers.set(name, tickers.get(name) != undefined ?
-			tickers.get(name)!.multiplyRating(sourceMultiplier * ticker.getRating())
+		tickerMap.set(name, tickerMap.get(name) != undefined ?
+			tickerMap.get(name)!.multiplyRating(sourceMultiplier * ticker.getRating())
 			: new Ticker(name).multiplyRating(sourceMultiplier * ticker.getRating())
 		)
 	})
+
+	return Array.from(tickerMap.values())
 }
 
-export function filterToAboveAverage(tickers: Map<string, Ticker>) : string[] {
+export function filterToAboveAverage(tickers: Ticker[]) : string[] {
 	let averageScore = 0
 	Object.values(tickers).forEach((ticker) => averageScore += ticker.getRating())
 	averageScore = averageScore / Object.values(tickers).length
 
-	const filteredTickers = Object.keys(tickers).filter((ticker) => tickers.get(ticker)!.getRating() > averageScore)
+	const filteredTickers = tickers.filter(ticker => ticker.getRating() > averageScore).map(ticker => ticker.getName())
 	console.log("utils | filtered below average tickers out of map")
 	return filteredTickers
+}
+
+export function splitToBuyAndSell(tickers: Ticker[]) : {buy: Ticker[], sell: Ticker[]} {
+	const filtered: {buy: Ticker[], sell: Ticker[]} = {buy: [], sell: []}
+
+	for(const ticker of tickers){
+		if(ticker.getRating() > 1) {
+			filtered.buy.push(ticker)
+		} else if (ticker.getRating() < 1) {
+			filtered.sell.push(ticker)
+		}
+	} 
+
+	return filtered
 }
 
 /**
