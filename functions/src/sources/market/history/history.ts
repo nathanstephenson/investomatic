@@ -1,12 +1,12 @@
-import { Ticker } from '../../../classes'
+import { Ticker, TickerHistory } from '../../../classes'
 import * as fs from 'fs'
 
 const FILEPATH = './src/sources/market/history/history.csv'
 const DELIM = ","
 const NEWLINE = "\n"
 
-export function unmarshallHistoryFile() : Ticker[] {
-	const tickers: Ticker[] = []
+export function unmarshallHistoryFile() : TickerHistory[] {
+	const tickers: TickerHistory[] = []
 
 	fs.readFile(FILEPATH, (err, data) => {
 		if(err) {
@@ -19,9 +19,10 @@ export function unmarshallHistoryFile() : Ticker[] {
 			const split = line.split(DELIM)
 			const tickerName = split[0]
 			const tickerRating = split[1]
-			// const lastCalculated = split[2]
+			const lastCalculated = split[2]
+			const averageDaysBetweenUpdates = split[3]
 
-			tickers.push(new Ticker(tickerName, Number.parseFloat(tickerRating)))
+			tickers.push(new TickerHistory(tickerName, Number.parseFloat(tickerRating), new Date(lastCalculated), Number.parseFloat(averageDaysBetweenUpdates)))
 		}
 	})
 
@@ -36,8 +37,9 @@ export function marshallHistoryFile(tickers: Ticker[]) : boolean {
 	tickers = mergeTickersWithHistory(tickers, tickerHistory)
 
 	data = data.concat("TICKER_NAME")
-		.concat(DELIM).concat("VALUE")
-		.concat(DELIM).concat("LAST_CALCULATED")
+		.concat(DELIM).concat("RATING")
+		.concat(DELIM).concat("LAST_UPDATED")
+		.concat(DELIM).concat("AVG_UPDATE_INTERVAL")
 		.concat("\n")
 
 	for(const ticker of tickers){
