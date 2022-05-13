@@ -50,6 +50,14 @@ export function splitToBuyAndSell(tickers: Ticker[]) : {buy: Ticker[], sell: Tic
 	return filtered
 }
 
+export function round(num: number, decimalPlaces: number) : number {
+	let PLACES = ""
+	for(let i = 0; i < decimalPlaces; i++){
+		PLACES += "0"
+	}
+	return Math.round(Number.parseFloat(num + PLACES)) / PLACES.length
+}
+
 /**
  * Asynchronous forEach method which runs in parallel. Can return an array of results (similar to map)
  */

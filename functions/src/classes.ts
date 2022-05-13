@@ -1,3 +1,8 @@
+import { TweetLikingUsersV2Paginator } from "twitter-api-v2"
+import { round } from "./utils"
+
+const DECIMAL_PLACES: number = 3
+
 export class Ticker {
 	private name: string
 	private rating: number
@@ -23,6 +28,39 @@ export class Ticker {
 	multiplyRating(multiplier: number) : Ticker {
 		this.rating *= multiplier
 		return this
+	}
+}
+
+export class TickerHistory extends Ticker {
+	private lastUpdated: Date
+	private averageDaysBetweenUpdates: number
+	private updateCount: number
+
+	constructor(name: string, rating:number, lastUpdated: Date, averageDaysBetweenUpdates: number) {
+		super(name, rating)
+		this.lastUpdated = lastUpdated
+		this.averageDaysBetweenUpdates = averageDaysBetweenUpdates
+		this.updateCount = 0
+	}
+
+	getLastUpdated() : Date {
+		return this.lastUpdated
+	}
+
+	setLastUpdated(lastUpdated: Date) : void {
+		this.updateCount += 1
+		const oldAverageInterval = this.getAverageDaysBetweenUpdates()
+		const currentInterval = (lastUpdated.getMilliseconds() - this.getLastUpdated().getMilliseconds())/(1000*60*60*24)
+		this.averageDaysBetweenUpdates = round((currentInterval + oldAverageInterval) / this.getUpdateCount(), DECIMAL_PLACES)
+		this.lastUpdated = lastUpdated
+	}
+	
+	getAverageDaysBetweenUpdates() : number {
+		return this.averageDaysBetweenUpdates
+	}
+
+	getUpdateCount() : number {
+		return this.updateCount
 	}
 }
 
