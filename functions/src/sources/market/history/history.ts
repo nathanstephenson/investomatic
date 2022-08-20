@@ -60,8 +60,8 @@ export function marshallHistoryFile(tickers: Ticker[]) : boolean {
 	return false
 }
 
-function mergeTickersWithHistory(tickers: Ticker[], tickerHistory: Ticker[]): Ticker[] {
-	const mergedTickers: Ticker[] = []
+function mergeTickersWithHistory(tickers: Ticker[], tickerHistory: TickerHistory[]) : TickerHistory[] {
+	const mergedTickers: TickerHistory[] = []
 
 	
 
