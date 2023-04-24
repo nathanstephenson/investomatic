@@ -27,12 +27,12 @@ const sourceMultipliers = {
 
 export const investomatic = functions.https.onRequest(async (request, response) => {
 
-	let tickers: Ticker[] = []
+	const tickers: Ticker[] = await getHistoricScores(['TSLA', 'AAPL'])
 
 	// GATHER DATA
-	const twitterTickers = await twitterScrape()
-	tickers = updateTickerScores(twitterTickers, tickers, sourceMultipliers["twitter"])
-	console.log("main | added tweets to map")
+	// const twitterTickers = await twitterScrape()
+	// tickers = updateTickerScores(twitterTickers, tickers, sourceMultipliers["twitter"])
+	// console.log("main | added tweets to map")
 
 	// POST PROCESSING
 	const tickersList = splitToBuyAndSell(tickers)
@@ -42,16 +42,17 @@ export const investomatic = functions.https.onRequest(async (request, response) 
 	console.log("main | Out of the tickers " + tickers.map(t => t?.getName()) + " these ones are above average in rating: " + buyList)
 
 	// GET AN AI TO TELL ME WHAT TO DO WITH MY MONEY
-	const gptChoices = await getChoicesFromGPT(buyList)
+	// const gptChoices = await getChoicesFromGPT(buyList)
 
 	// REDUCE ARRAY TO ONLY ONE OF EACH VALUE
-	const stocksToBuy = Array.from(new Set(gptChoices)) 
+	// const stocksToBuy = Array.from(new Set(gptChoices)) 
 
 	// USE HISTORICAL DATA TO ADD WEIGHTING TO SCORES AND VALIDATE TICKERS
-	const validTickers = await getHistoricScores(stocksToBuy)
+	// const validTickers = await getHistoricScores(stocksToBuy)
 
 	// MAKE ORDER
-	await makeOrder(validTickers, response)
+	// await makeOrder(validTickers, response)
+	response.send(buyList)
 })
 
 

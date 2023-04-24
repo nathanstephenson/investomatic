@@ -13,7 +13,31 @@ const sensitivity = 5 // PERCENTAGE DIFFERENCE BETWEEN OPEN/CLOSE FOR A DAY'S DA
 //   - KEEP TRACK OF AVERAGE NUMBER OF DAYS BEING USED FOR DATA EACH TIME HISTORY IS COLLECTED
 // - FIND THE BEST WAY TO STORE HISTORY (TEXT FILE, OR LIGHTWEIGHT LOCAL DB?) - currently just using csv
 // - FIGURE OUT HOW TO USE TRENDS TO MAKE PREDICTIONS
-// - USE HIGH-PERFORMING TICKERS TO LOOK FOR MORE THAT MIGHT ALSO DO WELL (E.G. SAME INDUSTRY)
+// - USE HIGH-PERFORMING TICKERS TO LOOK FOR MORE THAT MIGHT ALSO DO WELL (E.G. SAME INDUSTRY)// Array of tickers
+
+// const tickers = ['AAPL', 'GOOGL', 'MSFT'];
+
+// // Function to retrieve stock history for an array of tickers
+// async function getStockHistory(tickers: string[]): Promise<any[]> {
+// 	const stockHistory: any[] = [];
+// 	const alphaVantage = new AlphaVantageAPI(alphaVantageAPIKey, "compact", false);
+// 	for (const ticker of tickers) {
+// 		// Retrieve stock history using Alpha Vantage API
+// 		const response = await alphaVantage.getIntradayData(ticker, '5min');
+// 		stockHistory.push({ ticker, stockData: response });
+// 	}
+// 	return stockHistory;
+// }
+  
+//   // Call the function and log the results
+//   getStockHistory(tickers)
+// 	.then(stockHistory => {
+// 		console.log('Stock History:');
+// 		console.log(stockHistory);
+// 	})
+// 	.catch(error => {
+// 		console.error('Error retrieving stock history:', error);
+// 	});
 
 
 export async function getHistoricScores(stocks: string[] | undefined) : Promise<Ticker[]>{

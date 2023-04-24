@@ -1,4 +1,3 @@
-import { TweetLikingUsersV2Paginator } from "twitter-api-v2"
 import { round } from "./utils"
 
 const DECIMAL_PLACES: number = 3
