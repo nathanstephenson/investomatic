@@ -86,15 +86,3 @@ export class User {
 	}
 }
 
-export class TwitterUser extends User {
-	private username: string
-
-	constructor(name: string, username: string, rating: number) {
-		super(name, rating)
-		this.username = username
-	}
-
-	getUsername() : string {
-		return this.username
-	}
-}
