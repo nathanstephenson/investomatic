@@ -45,6 +45,7 @@ module.exports = {
 	"@typescript-eslint/no-unused-vars": "off",
 	"no-empty": "off",
 	"keyword-spacing": "off",
+	"linebreak-style": 0, 
 	"operator-linebreak": "off",
 	"valid-jsdoc": "off",
 	"brace-style": "off",
