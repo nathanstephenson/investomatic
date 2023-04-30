@@ -51,6 +51,7 @@ module.exports = {
 	"brace-style": "off",
 	"block-spacing": "off",
 	"arrow-parens": "off",
+	"spaced-comment": "off",
 	"@typescript-eslint/no-non-null-assertion": "off",
   },
 };
