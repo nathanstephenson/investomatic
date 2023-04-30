@@ -14,8 +14,19 @@ const alpaca = new Alpaca({
 })
 
 export const investomatic = functions.https.onRequest(async (request, response) => {
-	console.log(request)
-	console.log('something')
+	console.log(request.url)
+	switch(request.url){
+		case '/load':
+			break
+		case '/calculate':
+			break
+		case '/display':
+			break
+		case 'order':
+			break
+		default:
+			break
+	}
 	const tickers: Ticker[] = await getHistoricScores(['TSLA', 'AAPL'])
 
 	// GATHER DATA
