@@ -35,11 +35,12 @@ export class TickerHistory extends Ticker {
 	private averageDaysBetweenUpdates: number
 	private updateCount: number
 
-	constructor(name: string, rating:number, lastUpdated: Date, averageDaysBetweenUpdates: number) {
-		super(name, rating)
+	constructor(ticker: Ticker, lastUpdated: Date = new Date(), averageDaysBetweenUpdates: number = 0) {
+		super(ticker.getName(), ticker.getRating())
 		this.lastUpdated = lastUpdated
-		this.averageDaysBetweenUpdates = averageDaysBetweenUpdates
 		this.updateCount = 0
+		this.averageDaysBetweenUpdates = 0
+		this.setLastUpdated(lastUpdated)
 	}
 
 	getLastUpdated() : Date {
