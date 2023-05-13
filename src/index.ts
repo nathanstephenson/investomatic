@@ -18,8 +18,9 @@ const alpaca = new Alpaca({
 })
 
 const FORWARD_SLASH = '/'
-const DATA_SEPARATOR = '&'
-const SUB_DATA_SEPARATOR = '&7C'
+const DATA_SEPARATOR = '?'
+const SUB_DATA_SEPARATOR = '&'
+const DATA_KEYVAL_SEPARATOR = '='
 
 app.listen(port, () => {
 	testAll()
@@ -34,16 +35,16 @@ app.get('/*', async function(req: Request, res: Response) {
 	}
 	console.log("Req index is ", indexOfReqData)
 	const reqType = req.url.substring(1, indexOfReqData)
-	const reqData = req.url.substring(indexOfReqData)
+	const reqData = req.url.substring(indexOfReqData + 1)
 	console.log(`req type: ${reqType}, req data: ${reqData}`)
 	switch(reqType) {
-		case '':
-			const tickersForHistory = reqData.split(DATA_SEPARATOR)
+		case 'data':
+			const tickersForHistory = reqData.split(SUB_DATA_SEPARATOR)
 			res.send(await getHistoricScores(tickersForHistory))
 			break
 		case 'order':
-			const orderTickers: Ticker[] = reqData.split(DATA_SEPARATOR).map(tickerData => {
-				const splitData: string[] = tickerData.split(SUB_DATA_SEPARATOR)
+			const orderTickers: Ticker[] = reqData.split(SUB_DATA_SEPARATOR).map(tickerData => {
+				const splitData: string[] = tickerData.split(DATA_KEYVAL_SEPARATOR)
 				return new Ticker(splitData[0], Number.parseFloat(splitData[1]) || 1)
 			})
 			res.send(makeOrder(orderTickers, res))
