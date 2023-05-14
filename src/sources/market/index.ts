@@ -1,17 +1,34 @@
 import { AlphaVantageAPI, DailyBar } from "alpha-vantage-cli"
-import { Ticker } from "../../classes"
 import { alphaVantageAPIKey } from "../../secrets"
 import { asyncForEach } from "../../utils"
 
 const market = new AlphaVantageAPI(alphaVantageAPIKey, "compact", false)
 
-export async function getHistoricScores(stocks: string[]) : Promise<DailyBar[][]>{
-	const returnVals: DailyBar[][] = []
+interface DailyTicker {
+	name: string,
+	open: number,
+	close: number,
+	high: number,
+	low: number,
+	quantity: number,
+	timestamp: number
+}
+
+export async function getHistoricScores(stocks: string[]) : Promise<DailyTicker[][]>{
+	const returnVals: DailyTicker[][] = []
 	await asyncForEach(stocks, async (stock: string) => {
 		const data = await market.getDailyData(stock).catch(e => console.log(e))
 		if(data){
 			console.log("market/index.ts | " + stock)
-			returnVals.push(data)
+			returnVals.push(data.map(s => {return {
+				name: stock,
+				open: s.Open,
+				close: s.Close,
+				high: s.High,
+				low: s.Low,
+				quantity: s.Volume,
+				timestamp: s.Timestamp.getTime() / 1000
+			}}))
 		}
 	})
 
