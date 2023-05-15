@@ -33,14 +33,16 @@ app.get('/*', async function(req: Request, res: Response) {
 	if(indexOfReqData == -1) {
 		indexOfReqData = req.url.length 
 	}
+	const lastIndexOfReqData = req.url.lastIndexOf(DATA_SEPARATOR)
 	console.log("Req index is ", indexOfReqData)
 	const reqType = req.url.substring(1, indexOfReqData)
-	const reqData = req.url.substring(indexOfReqData + 1)
-	console.log(`req type: ${reqType}, req data: ${reqData}`)
+	const reqSubType = req.url.substring(indexOfReqData + 1, lastIndexOfReqData)
+	const reqData = req.url.substring(lastIndexOfReqData + 1)
+	console.log(`req type: ${reqType}, req sub type: ${reqSubType}, req data: ${reqData}`)
 	switch(reqType) {
 		case 'data':
 			const tickersForHistory = reqData.split(SUB_DATA_SEPARATOR)
-			res.send(await getHistoricScores(tickersForHistory))
+			res.send(await getHistoricScores(tickersForHistory, reqSubType === '' ? 0 : Number.parseInt(reqSubType)))
 			break
 		case 'order':
 			const orderTickers: Ticker[] = reqData.split(SUB_DATA_SEPARATOR).map(tickerData => {
