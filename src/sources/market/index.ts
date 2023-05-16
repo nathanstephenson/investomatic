@@ -15,6 +15,7 @@ interface DailyTicker {
 }
 
 export async function getHistoricScores(stocks: string[], startDate: number) : Promise<DailyTicker[][]>{
+	console.log("adding data for stocks after", startDate)
 	const returnVals: DailyTicker[][] = []
 	await asyncForEach(stocks, async (stock: string) => {
 		const data = await market.getDailyData(stock).catch(e => console.log(e))
