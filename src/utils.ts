@@ -26,42 +26,47 @@ export function updateTickerScores(retreivedTickers: Ticker[], existingTickers: 
 	return Array.from(tickerMap.values())
 }
 
-export function filterToAboveAverage(tickers: Ticker[]) : string[] {
-	let averageScore = 0
-	Object.values(tickers).forEach((ticker) => averageScore += ticker.getRating())
-	averageScore = averageScore / Object.values(tickers).length
+export function filterToAboveAverage(tickers: Ticker[]) : Ticker[] {
+	return filterScore(tickers, true)	
+}
 
-	const filteredTickers = tickers.filter(ticker => ticker.getRating() > averageScore).map(ticker => ticker.getName())
+export function filterToBelowAverage(tickers: Ticker[]): Ticker[] {
+	return filterScore(tickers, false)
+}
+
+function filterScore(tickers: Ticker[], filterAbove: boolean): Ticker[]{
+	const averageScore = getAverageScore(tickers)
+	const filteredTickers = tickers.filter(ticker => filterAbove ? ticker.getRating() >= averageScore : ticker.getRating() < averageScore)
 	console.log("utils | filtered below average tickers out of map")
 	return filteredTickers
 }
 
-export function splitToBuyAndSell(tickers: Ticker[]) : {buy: Ticker[], sell: Ticker[]} {
-	const filtered: {buy: Ticker[], sell: Ticker[]} = {buy: [], sell: []}
+function getAverageScore(tickers: Ticker[]): number {
+	let averageScore = 0
+	Object.values(tickers).forEach((ticker) => averageScore += ticker.getRating())
+	averageScore = averageScore / Object.values(tickers).length
+	console.log("Average ticker score: ", averageScore)
+	return averageScore
 
-	for(const ticker of tickers){
-		if(ticker.getRating() > 1) {
-			filtered.buy.push(ticker)
-		} else if (ticker.getRating() < 1) {
-			filtered.sell.push(ticker)
-		}
-	} 
-
-	return filtered
 }
 
-export function round(num: number, decimalPlaces: number) : number {
-	let PLACES = ""
-	for(let i = 0; i < decimalPlaces; i++){
-		PLACES += "0"
-	}
-	return Math.round(Number.parseFloat(num + PLACES)) / PLACES.length
+export function splitToBuyAndSell(tickers: Ticker[]) : {buy: Ticker[], sell: Ticker[]} {
+	return {buy: filterToAboveAverage(tickers), sell: filterToBelowAverage(tickers)}
+}
+
+export function round(n: number, decimalPlaces: number) : number {
+	if (decimalPlaces === undefined) {
+            decimalPlaces = 0
+        }
+
+        var multiplicator = Math.pow(10, decimalPlaces)
+        n = parseFloat((n * multiplicator).toFixed(11))
+        return Math.round(n) / multiplicator
 }
 
 /**
  * Asynchronous forEach method which runs in parallel. Can return an array of results (similar to map)
  */
 export async function asyncForEach(params: unknown[], callbackFn: {(param: any):Promise<unknown>}) : Promise<any[]> {
-	const results = await Promise.all(params.map(async param => await callbackFn(param)))
-	return results
+	return await Promise.all(params.map(async param => await callbackFn(param)))
 }
