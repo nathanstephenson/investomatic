@@ -27,6 +27,12 @@ app.listen(port, () => {
 	console.log(`Server is UP at: localhost:${port}`)
 })
 
+interface OutputData {
+	value: number,
+	date: number
+}
+let outputData = new Map<string, OutputData[]>()
+
 app.get('/*', async function(req: Request, res: Response) {
 	if(req.url === '/favicon.ico'){ return }
 	let indexOfReqData: number = req.url.indexOf(DATA_SEPARATOR) 
@@ -37,14 +43,29 @@ app.get('/*', async function(req: Request, res: Response) {
 	const reqData = req.url.substring(indexOfReqData + 1)
 	console.log(`req type: ${reqType}, req data: ${reqData}`)
 	switch(reqType) {
-		case 'data':
-			const tickersForHistory = reqData.split(SUB_DATA_SEPARATOR).map(tickerData => {
-				const splitData = tickerData.split(DATA_KEYVAL_SEPARATOR)
+		case 'data': // data?{ticker}&{start date}?{ticker}&{start date}
+			const tickersForHistory = reqData.split(DATA_SEPARATOR).map(tickerData => {
+				const splitData = tickerData.split(SUB_DATA_SEPARATOR)
 				return {name: splitData[0], startDate: Number.parseInt(splitData[1]) || 1}
 			})
 			res.send(await getHistoricScores(tickersForHistory))
 			break
-		case 'order':
+		case 'output': // output?{ticker}&{value}={date}&{value}={date}?{ticker}&{value}={date}
+			outputData = new Map<string, OutputData[]>()
+			reqData.split(DATA_SEPARATOR).forEach(data => {
+				const ticker = data.split(SUB_DATA_SEPARATOR)[0]
+				const values = data.split(SUB_DATA_SEPARATOR).slice(1).map(keyVal => {
+					const splitKeyVal = keyVal.split(DATA_KEYVAL_SEPARATOR)
+					return {value: Number.parseFloat(splitKeyVal[0]), date: Number.parseInt(splitKeyVal[1])}
+				})
+				outputData.set(ticker, values)
+			})
+			res.send(true)
+			break
+		case 'visualise': // visualise?{ticker}
+			res.send(outputData.get(reqData))
+			break
+		case 'order': // order?{ticker}&{score}?{ticker}&{score}
 			const orderTickers: Ticker[] = reqData.split(SUB_DATA_SEPARATOR).map(tickerData => {
 				const splitData: string[] = tickerData.split(DATA_KEYVAL_SEPARATOR)
 				return new Ticker(splitData[0], Number.parseFloat(splitData[1]) || 1)
