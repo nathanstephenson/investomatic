@@ -10,10 +10,10 @@
     "target": "es2017",
 	"typeRoots": [
 		"./node_modules/@types"
-	],
+	]
   },
   "compileOnSave": true,
   "include": [
-    "src"
+   	"./" 
   ]
 }
