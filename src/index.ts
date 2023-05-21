@@ -1,4 +1,5 @@
 import express, {Express, Request, Response} from 'express'
+import {exec} from 'child_process'
 import Alpaca from "@alpacahq/alpaca-trade-api"
 
 import testAll from "../test/TestMain"
@@ -27,13 +28,25 @@ app.listen(port, () => {
 	console.log(`Server is UP at: localhost:${port}`)
 })
 
+function execAlgo() {
+	exec("sh ~/Documents/Projects/investomatic/execAlgo.sh", (error, stdout, stderr) => {
+		if (error) {
+			console.log(error)
+		}
+		console.log(stdout)
+	})
+}
+
 interface OutputData {
 	value: number,
-	date: number
+	timestamp: number
 }
 let outputData = new Map<string, OutputData[]>()
 
 app.get('/*', async function(req: Request, res: Response) {
+	res.setHeader("Access-Control-Allow-Origin", "*")
+	res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,DELETE")
+	res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
 	if(req.url === '/favicon.ico'){ return }
 	let indexOfReqData: number = req.url.indexOf(DATA_SEPARATOR) 
 	if(indexOfReqData == -1) {
@@ -41,7 +54,7 @@ app.get('/*', async function(req: Request, res: Response) {
 	}
 	const reqType = req.url.substring(1, indexOfReqData)
 	const reqData = req.url.substring(indexOfReqData + 1)
-	console.log(`req type: ${reqType}, req data: ${reqData}`)
+	// console.log(`req type: ${reqType}, req data: ${reqData}`)
 	switch(reqType) {
 		case 'data': // data?{ticker}&{start date}?{ticker}&{start date}
 			const tickersForHistory = reqData.split(DATA_SEPARATOR).map(tickerData => {
@@ -56,14 +69,24 @@ app.get('/*', async function(req: Request, res: Response) {
 				const ticker = data.split(SUB_DATA_SEPARATOR)[0]
 				const values = data.split(SUB_DATA_SEPARATOR).slice(1).map(keyVal => {
 					const splitKeyVal = keyVal.split(DATA_KEYVAL_SEPARATOR)
-					return {value: Number.parseFloat(splitKeyVal[0]), date: Number.parseInt(splitKeyVal[1])}
+					return {value: Number.parseFloat(splitKeyVal[0]), timestamp: Number.parseInt(splitKeyVal[1])}
 				})
 				outputData.set(ticker, values)
+				console.log("cached output data for ", ticker)
 			})
 			res.send(true)
 			break
 		case 'visualise': // visualise?{ticker}
+			res.setHeader("ticker", reqData)
+			res.status(200)
 			res.send(outputData.get(reqData))
+			break
+		case 'tickers': // tickers
+			res.send(Array.from(outputData.keys()))
+			break
+		case 'exec': // exec
+			execAlgo()
+			res.send(true)
 			break
 		case 'order': // order?{ticker}&{score}?{ticker}&{score}
 			const orderTickers: Ticker[] = reqData.split(SUB_DATA_SEPARATOR).map(tickerData => {
@@ -117,4 +140,9 @@ async function makeOrder(stocksToBuy: Ticker[], response: Response): Promise<voi
 		response.send("no stocks to buy")
 	}
 }
+
+
+// RUN OTHER COMMANDS AFTER SETUP COMPLETE
+
+execAlgo()
 
