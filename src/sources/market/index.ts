@@ -20,11 +20,17 @@ export async function getHistoricScores(stocks: {name: string, startDate: number
 	today.setDate(new Date().getDate() - 1)
 	const yesterday = today.setHours(0,0,0,0) / 1000
 	console.log(`timestamp for up-to-date data:`, yesterday)
+	let updates = 0
 	await asyncForEach(stocks, async (stock: {name: string, startDate: number}) => {
 		if (stock.startDate == yesterday) {
 			console.log(`data for ${stock.name} up to date, skipping`)
 			return
 		}
+		if (updates === 5) {
+			console.log("maximum updates per query reached, run program again for more reads")
+			return
+		}
+		updates++
 		const data = await market.getDailyData(stock.name).catch(e => console.log(e))
 		if(data){
 			console.log("market/index.ts | " + stock.name)
