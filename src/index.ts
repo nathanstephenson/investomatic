@@ -28,13 +28,17 @@ app.listen(port, () => {
 	console.log(`Server is UP at: localhost:${port}`)
 })
 
-function execAlgo() {
-	exec("sh ~/Documents/Projects/investomatic/execAlgo.sh", (error, stdout, stderr) => {
-		if (error) {
-			console.log(error)
-		}
-		console.log(stdout)
-	})
+function execAlgo(): Promise<string> {
+	return new Promise((resolve, reject) => {
+		exec("sh ~/Documents/Projects/investomatic/execAlgo.sh", (error, stdout, stderr) => {
+			if (error) {
+				console.log(error)
+				reject(error.message)
+			}
+			console.log(stdout)
+			resolve(stdout)
+		})
+	})	
 }
 
 interface OutputData {
@@ -85,8 +89,7 @@ app.get('/*', async function(req: Request, res: Response) {
 			res.send(Array.from(outputData.keys()))
 			break
 		case 'exec': // exec
-			execAlgo()
-			res.send(true)
+			await execAlgo().then(() => res.send(true), () => res.send(false))
 			break
 		case 'order': // order?{ticker}&{score}?{ticker}&{score}
 			const orderTickers: Ticker[] = reqData.split(SUB_DATA_SEPARATOR).map(tickerData => {
