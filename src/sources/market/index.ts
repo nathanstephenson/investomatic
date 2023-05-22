@@ -1,6 +1,6 @@
 import { AlphaVantageAPI, DailyBar } from "alpha-vantage-cli"
 import { alphaVantageAPIKey } from "../../secrets"
-import { asyncForEach } from "../../utils"
+import { asyncForEach, getPreviousWorkingDayTimestamp } from "../../utils"
 
 const market = new AlphaVantageAPI(alphaVantageAPIKey, "compact", false)
 
@@ -16,10 +16,8 @@ interface DailyTicker {
 
 export async function getHistoricScores(stocks: {name: string, startDate: number}[]) : Promise<DailyTicker[][]>{
 	const returnVals: DailyTicker[][] = []
-	const today = new Date()
-	today.setDate(new Date().getDate() - 1)
-	const yesterday = today.setHours(0,0,0,0) / 1000
-	console.log(`timestamp for up-to-date data:`, yesterday)
+	const yesterday = getPreviousWorkingDayTimestamp(new Date())
+	console.log(`timestamp for up-to-date data (previous working day):`, yesterday)
 	let updates = 0
 	await asyncForEach(stocks, async (stock: {name: string, startDate: number}) => {
 		if (stock.startDate == yesterday) {

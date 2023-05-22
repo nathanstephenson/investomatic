@@ -1,14 +1,6 @@
 import { Ticker } from "./classes"
 
 /* eslint-disable require-jsdoc */
-export function marshallHistoryFile() : void {// save stored user scores after running calculation
-	console.log("not implemented")
-}
-
-export function unmarshallHistoryFile() : void {// output users scores to a map/object/dict
-	console.log("not implemented")
-}
-
 export function updateTickerScores(retreivedTickers: Ticker[], existingTickers: Ticker[], sourceMultiplier: number) : Ticker[] {
 	const tickerMap = new Map<string, Ticker>()
 	existingTickers.forEach(t => {
@@ -59,9 +51,28 @@ export function round(n: number, decimalPlaces: number) : number {
             decimalPlaces = 0
         }
 
-        var multiplicator = Math.pow(10, decimalPlaces)
+        const multiplicator = Math.pow(10, decimalPlaces)
         n = parseFloat((n * multiplicator).toFixed(11))
         return Math.round(n) / multiplicator
+}
+
+export function getPreviousWorkingDayTimestamp(date: Date) {
+	date = goBackOneDay(date)
+	while (date.getDay() === 0 || date.getDay() === 6) {
+		date = goBackOneDay(date)
+	}
+	return date.setHours(0,0,0,0) / 1000
+}
+
+function goBackOneDay(date: Date): Date {
+	if(date.getDate() > 1){
+		date.setDate(date.getDate() - 1)
+	} else if (date.getMonth() > 0){
+		date.setMonth(date.getMonth() - 1, 0)
+	} else {
+		date.setFullYear(date.getFullYear() - 1, 11, 0)
+	}
+	return date
 }
 
 /**
