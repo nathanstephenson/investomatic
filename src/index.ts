@@ -35,6 +35,7 @@ function execAlgo(): Promise<string> {
 	return new Promise((resolve, reject) => {
 		exec("sh ~/Documents/Projects/investomatic/execAlgo.sh", (error, stdout, stderr) => {
 			if (error) {
+				console.log(stdout)
 				console.log(error)
 				reject(error.message)
 			}
@@ -55,6 +56,7 @@ interface OutputData {
 }
 let outputData = new Map<string, Output>()
 
+// data?{ticker}&{start date}?{ticker}&{start date}
 app.get('/data', async function(req: Request, res: Response) {
 	setResponseHeaders(res)
 	const tickersForHistory = getReqData(req.url).split(DATA_SEPARATOR).map(tickerData => {
@@ -64,6 +66,7 @@ app.get('/data', async function(req: Request, res: Response) {
 	res.send(await getHistoricScores(tickersForHistory))
 })
 
+// visualise?{ticker}
 app.get('/visualise', function(req: Request, res: Response) {
 	setResponseHeaders(res)
 	const reqData = getReqData(req.url)
@@ -81,6 +84,7 @@ app.get('/exec', async function(req: Request, res: Response) {
 	await execAlgo().then(() => res.send(true), () => res.send(false))
 })
 
+// order?{ticker}&{score}?{ticker}&{score}
 app.get('/order', function(req: Request, res: Response) {
 	setResponseHeaders(res)
 	const orderTickers: Ticker[] = getReqData(req.url).split(SUB_DATA_SEPARATOR).map(tickerData => {
