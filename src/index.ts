@@ -44,7 +44,7 @@ interface OutputData {
 let outputData = new Map<string, Output>()
 
 // data?{ticker}&{start date}?{ticker}&{start date}
-app.get('/data', async function(req: Request, res: Response) {
+app.get('/data', async (req: Request, res: Response) => {
 	setResponseHeaders(res)
 	const tickersForHistory = getReqData(req.url).split(DATA_SEPARATOR).map(tickerData => {
 		const splitData = tickerData.split(SUB_DATA_SEPARATOR)
@@ -54,25 +54,25 @@ app.get('/data', async function(req: Request, res: Response) {
 })
 
 // visualise?{ticker}
-app.get('/visualise', function(req: Request, res: Response) {
+app.get('/visualise', (req: Request, res: Response) => {
 	setResponseHeaders(res)
 	const reqData = getReqData(req.url)
 	res.setHeader("ticker", reqData)
 	res.send(outputData.get(reqData))
 })
 
-app.get('/tickers', function(req: Request, res: Response) {
+app.get('/tickers', (req: Request, res: Response) => {
 	setResponseHeaders(res)
 	res.send(Array.from(outputData.keys()))
 })
 
-app.get('/exec', async function(req: Request, res: Response) {
+app.get('/exec', async (req: Request, res: Response) => {
 	setResponseHeaders(res)
 	await execAlgo().then(() => res.send(true), () => res.send(false))
 })
 
 // order?{ticker}&{score}?{ticker}&{score}
-app.get('/order', function(req: Request, res: Response) {
+app.get('/order', (req: Request, res: Response) => {
 	setResponseHeaders(res)
 	const orderTickers: Ticker[] = getReqData(req.url).split(SUB_DATA_SEPARATOR).map(tickerData => {
 		const splitData: string[] = tickerData.split(DATA_KEYVAL_SEPARATOR)
@@ -81,7 +81,7 @@ app.get('/order', function(req: Request, res: Response) {
 	res.send(makeOrder(orderTickers, res))
 })
 
-app.post('/output', async function(req: Request, res: Response) {
+app.post('/output', async (req: Request, res: Response) => {
 	setResponseHeaders(res)
 	outputData = new Map<string, Output>()
 	for(const ticker in req.body) {
