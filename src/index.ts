@@ -31,19 +31,6 @@ app.listen(port, () => {
 	console.log(`Server is UP at: localhost:${port}`)
 })
 
-function execAlgo(): Promise<string> {
-	return new Promise((resolve, reject) => {
-		exec("sh ~/Documents/Projects/investomatic/execAlgo.sh", (error, stdout, stderr) => {
-			if (error) {
-				console.log(error)
-				reject(error.message)
-			}
-			console.log(stdout)
-			resolve(stdout)
-		})
-	})	
-}
-
 interface Output {
 	score: number,
 	data: OutputData[]
@@ -53,6 +40,7 @@ interface OutputData {
 	value: number,
 	timestamp: number
 }
+
 let outputData = new Map<string, Output>()
 
 // data?{ticker}&{start date}?{ticker}&{start date}
@@ -115,6 +103,19 @@ function getReqData(reqUrl: string): string {
 	}
 
 	return reqUrl.substring(indexOfReqData + 1)
+}
+
+function execAlgo(): Promise<string> {
+	return Promise.resolve(new Promise<string>((resolve, reject) => {
+		exec("sh ~/Documents/Projects/investomatic/execAlgo.sh", (error, stdout, stderr) => {
+			if (error) {
+				console.log(error)
+				reject(error.message)
+			}
+			console.log(stdout)
+			resolve(stdout)
+		})
+	}))	
 }
 
 /**
