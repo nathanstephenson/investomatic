@@ -35,7 +35,6 @@ function execAlgo(): Promise<string> {
 	return new Promise((resolve, reject) => {
 		exec("sh ~/Documents/Projects/investomatic/execAlgo.sh", (error, stdout, stderr) => {
 			if (error) {
-				console.log(stdout)
 				console.log(error)
 				reject(error.message)
 			}
@@ -161,5 +160,5 @@ async function makeOrder(stocksToBuy: Ticker[], response: Response): Promise<voi
 
 // RUN OTHER COMMANDS AFTER SETUP COMPLETE
 
-execAlgo()
+// execAlgo()
 
