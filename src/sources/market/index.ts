@@ -33,7 +33,7 @@ export async function getHistoricScores(stocks: {name: string, startDate: number
 		if(data){
 			console.log("market/index.ts | " + stock.name)
 			returnVals.push(data
-				.filter(s => s.Timestamp.getTime() / 1000 > stock.startDate)
+				.filter(s => s.Timestamp !== undefined && s.Timestamp.getTime() / 1000 > stock.startDate)
 				.map(s => {
 					return {
 						name: stock.name,
