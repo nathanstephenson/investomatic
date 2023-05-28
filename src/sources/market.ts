@@ -1,6 +1,6 @@
-import { AlphaVantageAPI, DailyBar } from "alpha-vantage-cli"
-import { alphaVantageAPIKey } from "../../secrets"
-import { asyncForEach, getPreviousWorkingDayTimestamp } from "../../utils"
+import { AlphaVantageAPI } from "alpha-vantage-cli"
+import { alphaVantageAPIKey } from "../secrets"
+import { asyncForEach, getPreviousWorkingDayTimestamp } from "../utils"
 
 const market = new AlphaVantageAPI(alphaVantageAPIKey, "compact", false)
 

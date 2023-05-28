@@ -7,8 +7,6 @@ import testAll from "../test/TestMain"
 
 import { alpacaAPIKey, alpacaKeyID } from "./secrets"
 
-import { Ticker } from "./classes"
-import { splitToBuyAndSell } from "./utils"
 import { getHistoricScores } from "./sources/market"
 
 const port = process.env.PORT || 8080
@@ -74,11 +72,10 @@ app.get('/exec', async (req: Request, res: Response) => {
 // order?{ticker}&{score}?{ticker}&{score}
 app.get('/order', (req: Request, res: Response) => {
 	setResponseHeaders(res)
-	const orderTickers: Ticker[] = getReqData(req.url).split(SUB_DATA_SEPARATOR).map(tickerData => {
-		const splitData: string[] = tickerData.split(DATA_KEYVAL_SEPARATOR)
-		return new Ticker(splitData[0], Number.parseFloat(splitData[1]) || 1)
-	})
-	res.send(makeOrder(orderTickers, res))
+	const splitReqData = getReqData(req.url).split(SUB_DATA_SEPARATOR)
+	const ticker = splitReqData[0]
+	const amount = Number.parseFloat(splitReqData[1])
+	res.send(makeOrder(ticker, amount))
 })
 
 app.post('/output', async (req: Request, res: Response) => {
