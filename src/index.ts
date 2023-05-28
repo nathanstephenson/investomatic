@@ -121,44 +121,36 @@ function execAlgo(): Promise<string> {
 /**
  * Makes a single order using a random ticker in the stocksToBuy list (also sends response)
  */
-async function makeOrder(stocksToBuy: Ticker[], response: Response): Promise<void> {
+async function makeOrder(ticker: string, amount: number): Promise<string> {
 	
-	const account = await alpaca.getAccount().catch((error: unknown) => response.send(error))
+	const account = await alpaca.getAccount().catch((error: Error) => error)
+	if (account instanceof Error) {
+		return account.message
+	}
 
 	console.log("src/index.ts | got alpaca account")
 
-	if (stocksToBuy != undefined && stocksToBuy != null) {
-		const stockToBuy = stocksToBuy[Math.floor(Math.random() * stocksToBuy?.length)]
-		const notional = 0.1 * account.buying_power * stocksToBuy.length > 0 ? stockToBuy.getRating() : 1
-		console.log("src/index.ts | attempting to purchase " + stockToBuy + " with a notional of £" + notional)
+	const notional = 0.1 * account.buying_power > 0 ? amount : 1
+	console.log("src/index.ts | attempting to purchase " + ticker + " with a notional of £" + notional)
 
-		let order = ""
-		try{
-			order = await alpaca.createOrder({
-					symbol: stockToBuy,
-					notional: notional,
-					side: 'buy',
-					type: 'market',
-					time_in_force: 'day'
-				})
-		} catch (e) {
-			console.log("Couldn't create order... \n" + e)
-			order += e
-			response.send("Couldn't create order... \n" + order)
-		}
-
-		if(!response.headersSent){
-			console.log("src/index.ts | created order")
-			response.send(order)
-		} else {
-			console.log("src/index.ts | process failed :(")
-		}
-	} else {
-		response.send("no stocks to buy")
+	let order = ""
+	try{
+		order = await alpaca.createOrder({
+				symbol: ticker,
+				notional: notional,
+				side: 'buy',
+				type: 'market',
+				time_in_force: 'day'
+			})
+	} catch (e) {
+		console.log("Couldn't create order... \n" + e)
+		order += e
+		return "Couldn't create order... \n" + order
 	}
+
+	console.log("src/index.ts | created order")
+	return order
 }
-
-
 // RUN OTHER COMMANDS AFTER SETUP COMPLETE
 
 // execAlgo()
