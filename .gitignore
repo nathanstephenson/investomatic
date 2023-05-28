@@ -1,3 +1,5 @@
+*secrets.ts
+
 # Logs
 logs
 *.log
@@ -86,5 +88,3 @@ typings/
 
 # DynamoDB Local files
 .dynamodb/
-
-functions/src/secrets.ts
