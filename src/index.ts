@@ -18,17 +18,15 @@ const alpaca = new Alpaca({
 	secretKey: alpacaAPIKey,
 	paper: true,
 })
-const TOTAL_POSITIONS_VALUE = 20000
 
-const FORWARD_SLASH = "/"
 const DATA_SEPARATOR = "?"
 const SUB_DATA_SEPARATOR = "&"
-const DATA_KEYVAL_SEPARATOR = "="
 
-app.listen(port, () => {
-	testAll()
-	console.log(`Server is UP at: localhost:${port}`)
-})
+type Position = {
+	ticker: string
+	quantity: number
+	price: number
+}
 
 interface Output {
 	score: number
@@ -41,6 +39,7 @@ interface OutputData {
 }
 
 let outputData = new Map<string, Output>()
+let currentPositions = new Map<string, Position>()
 let suggestedPositions = new Map<string, number>()
 
 // data?{ticker}&{start date}?{ticker}&{start date}
@@ -81,14 +80,28 @@ app.get("/exec", async (req: Request, res: Response) => {
 
 app.get("/positions", async (req: Request, res: Response) => {
 	setResponseHeaders(res)
-	type Position = {
-		symbol: string
-		qty: number
+	currentPositions.clear()
+	const positions: Position[] = []
+	interface CurrentPosition {
+		symbol: string,
+		qty: number,
 		current_price: number
 	}
-	;(alpaca.getPositions() as Position[]).map((pos: Position) => {
-		return { name: pos.symbol, value: pos.qty * pos.current_price }
+	(await alpaca.getPositions() as CurrentPosition[]).forEach((pos: CurrentPosition) => {
+		const position = { ticker: pos.symbol, quantity: pos.qty, price: pos.current_price }
+		currentPositions.set(pos.symbol, position)
+		positions.push(position)
 	})
+	res.send(positions)
+})
+
+app.get("/suggested", (req: Request, res: Response) => {
+	setResponseHeaders(res)
+	const suggestions: {ticker: string, value: number}[] = []
+	suggestedPositions.forEach((value, key) => {
+		suggestions.push({ticker: key, value})
+	})
+	res.send(suggestions)
 })
 
 app.post("/output", async (req: Request, res: Response) => {
@@ -115,10 +128,21 @@ app.post("/order", (req: Request, res: Response) => {
 	for (const ticker in req.body) { // update suggested positions with modifications from client
 		suggestedPositions.set(ticker, req.body[ticker])
 	}
+	for (const position in currentPositions.keys()) { // add sell orders for any positions missing from suggestions
+		if (!suggestedPositions.has(position)) {
+			suggestedPositions.set(position, - currentPositions.get(position)!.price * currentPositions.get(position)!.quantity)
+		}
+	}
 	for (const ticker in suggestedPositions.keys()) {
+		if (suggestedPositions.get(ticker)! < 0 && !currentPositions.has(ticker)) continue
 		responses.push(makeOrder(ticker, suggestedPositions.get(ticker)!))
 	}
 	res.send(responses)
+})
+
+app.listen(port, () => {
+	testAll()
+	console.log(`Server is UP at: localhost:${port}`)
 })
 
 function setResponseHeaders(res: Response) {
@@ -161,41 +185,30 @@ function execAlgo(): Promise<string> {
 }
 
 /**
- * Makes a single order using a random ticker in the stocksToBuy list (also sends response)
+ * Makes a single order using a random ticker in the stocksToBuy list (and returns the response)
  */
 async function makeOrder(ticker: string, notional: number): Promise<string> {
+	console.log("order: ", ticker, notional)
 	const account = await alpaca.getAccount().catch((error: Error) => error)
 	if (account instanceof Error) {
 		return account.message
 	}
 
-	console.log("src/index.ts | got alpaca account")
-
-	console.log(
-		"src/index.ts | attempting to purchase " +
-			ticker +
-			" with a notional of £" +
-			notional
-	)
-
 	let order = ""
 	try {
 		order = await alpaca.createOrder({
 			symbol: ticker,
-			notional: notional,
-			side: "buy",
+			notional: Math.abs(notional),
+			side: notional >= 0 ? "buy" : "sell",
 			type: "market",
 			time_in_force: "day",
 		})
 	} catch (e) {
 		console.log("Couldn't create order... \n" + e)
 		order += e
-		return "Couldn't create order... \n" + order
+		return order
 	}
 
 	console.log("src/index.ts | created order")
 	return order
 }
-// RUN OTHER COMMANDS AFTER SETUP COMPLETE
-
-// execAlgo()
